@@ -3,7 +3,7 @@ setlocal
 
 rem Configure Chrome path here
 set CHROME_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"
-echo Chrome Resolver v2
+echo Chrome Resolver v2.0
 echo ==================
 echo.
 echo This tool allows you to force Chrome to resolve a domain name to a specific IP address.
