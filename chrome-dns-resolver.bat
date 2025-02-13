@@ -1,6 +1,14 @@
 @echo off
 setlocal
 
+echo Browser Resolver v2.1
+echo =====================
+echo.
+echo This tool allows you to force Chrome or Brave to resolve a domain name to a specific IP address.
+echo It's useful for testing websites that haven't had their DNS updated yet or for local development.
+echo You can also save the configuration as a desktop shortcut for quick access.
+echo.
+
 rem Determine default browser executable path from common installations (Chrome first, then Brave)
 if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" (
     set "BROWSER_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
@@ -27,22 +35,6 @@ if %ERRORLEVEL%==0 (
     ) else (
         set "PROCESS_NAME="
     )
-)
-
-echo Browser Resolver v2.1
-echo =====================
-echo.
-echo This tool allows you to force Chrome or Brave to resolve a domain name to a specific IP address.
-echo It's useful for testing websites that haven't had their DNS updated yet or for local development.
-echo You can also save the configuration as a desktop shortcut for quick access.
-echo.
-
-rem Double-check that the selected browser executable exists
-if not exist "%BROWSER_PATH%" (
-    echo Error: Browser not found at %BROWSER_PATH%
-    echo Please ensure it is installed.
-    pause
-    exit /b 1
 )
 
 rem Check if the browser is currently running
