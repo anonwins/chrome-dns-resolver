@@ -1,42 +1,69 @@
 @echo off
 setlocal
 
-rem Configure Chrome path here
-set CHROME_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"
-echo Chrome Resolver v2.0
-echo ==================
-echo.
-echo This tool allows you to force Chrome to resolve a domain name to a specific IP address.
-echo It's useful for testing websites that haven't had their DNS updated yet or for local development.
-echo You can also save the configuration as a desktop shortcut for quick access.
-echo.
-
-rem Check if Chrome exists
-if not exist %CHROME_PATH% (
-    echo Error: Chrome not found at %CHROME_PATH%
-    echo Please ensure Chrome is installed in the configured location.
+rem Determine default browser executable path from common installations (Chrome first, then Brave)
+if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" (
+    set "BROWSER_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+) else if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" (
+    set "BROWSER_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+) else if exist "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe" (
+    set "BROWSER_PATH=C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+) else if exist "C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe" (
+    set "BROWSER_PATH=C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe"
+) else (
+    echo Error: Neither Chrome nor Brave browser found.
     pause
     exit /b 1
 )
 
-rem Check if Chrome is running
-:check_chrome
-tasklist /FI "IMAGENAME eq chrome.exe" 2>NUL | find /I /N "chrome.exe">NUL
-if "%ERRORLEVEL%"=="0" (
-    if not defined chromeMessage (
-        echo Chrome is currently running. Please close all Chrome windows before continuing.
-        set chromeMessage=1
+rem Determine the process name based on the selected browser
+echo %BROWSER_PATH% | findstr /I "chrome" >nul
+if %ERRORLEVEL%==0 (
+    set "PROCESS_NAME=chrome.exe"
+) else (
+    echo %BROWSER_PATH% | findstr /I "brave" >nul
+    if %ERRORLEVEL%==0 (
+        set "PROCESS_NAME=brave.exe"
+    ) else (
+        set "PROCESS_NAME="
     )
-    timeout /t 2 /nobreak >nul
-    goto check_chrome
 )
 
-rem Chrome is closed, wait x seconds before continuing
+echo Browser Resolver v2.1
+echo =====================
+echo.
+echo This tool allows you to force Chrome or Brave to resolve a domain name to a specific IP address.
+echo It's useful for testing websites that haven't had their DNS updated yet or for local development.
+echo You can also save the configuration as a desktop shortcut for quick access.
+echo.
+
+rem Double-check that the selected browser executable exists
+if not exist "%BROWSER_PATH%" (
+    echo Error: Browser not found at %BROWSER_PATH%
+    echo Please ensure it is installed.
+    pause
+    exit /b 1
+)
+
+rem Check if the browser is currently running
+:check_browser
+tasklist /FI "IMAGENAME eq %PROCESS_NAME%" 2>NUL | find /I /N "%PROCESS_NAME%">NUL
+if "%ERRORLEVEL%"=="0" (
+    if not defined browserMessage (
+        echo %PROCESS_NAME% is currently running. Please close all browser windows before continuing.
+        set browserMessage=1
+    )
+    timeout /t 2 /nobreak >nul
+    goto check_browser
+)
+
+rem Browser is closed, wait a moment before continuing
 timeout /t 2 /nobreak >nul
 
 rem Prompt user for the domain name and IP address to map
 set /p HOST_NAME="Enter the host name: "
 set /p IP_ADDRESS="Enter the IP address: "
+
 rem Generate shortcut filename based on host
 set SHORTCUT_NAME=%HOST_NAME%.lnk
 set SHORTCUT_PATH=%USERPROFILE%\Desktop\%SHORTCUT_NAME%
@@ -45,7 +72,7 @@ echo.
 set /p CREATE_SHORTCUT="Would you like to save this as a shortcut? (y/n): "
 if /i "%CREATE_SHORTCUT%"=="y" (
     rem Create .lnk shortcut using PowerShell
-    powershell -Command "$WS = New-Object -ComObject WScript.Shell; $SC = $WS.CreateShortcut('%USERPROFILE%\Desktop\%HOST_NAME%.lnk'); $SC.TargetPath = '%CHROME_PATH%'; $SC.Arguments = '--host-resolver-rules=\""MAP %HOST_NAME% %IP_ADDRESS%\"" http://%HOST_NAME%'; $SC.Save()"
+    powershell -Command "$WS = New-Object -ComObject WScript.Shell; $SC = $WS.CreateShortcut('%USERPROFILE%\Desktop\%HOST_NAME%.lnk'); $SC.TargetPath = '%BROWSER_PATH%'; $SC.Arguments = '--host-resolver-rules=\""MAP %HOST_NAME% %IP_ADDRESS%\"" http://%HOST_NAME%'; $SC.Save()"
     echo Shortcut created at %SHORTCUT_PATH%
     set shortcutCreated=1
 )
@@ -53,7 +80,7 @@ if /i "%CREATE_SHORTCUT%"=="y" (
 if defined shortcutCreated (
     goto ask_launch
 ) else (
-    goto launch_chrome
+    goto launch_browser
 )
 
 :ask_launch
@@ -64,7 +91,7 @@ if /i "%LAUNCH_SHORTCUT%" neq "y" (
     goto after_launch
 )
 
-rem Launch Chrome with host resolver rules to map the domain to the specified IP
-:launch_chrome
-start "" %CHROME_PATH% --host-resolver-rules="MAP %HOST_NAME% %IP_ADDRESS%" http://%HOST_NAME%
+rem Launch the browser with host resolver rules to map the domain to the specified IP
+:launch_browser
+start "" "%BROWSER_PATH%" --host-resolver-rules="MAP %HOST_NAME% %IP_ADDRESS%" http://%HOST_NAME%
 :after_launch
