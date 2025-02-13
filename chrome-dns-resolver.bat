@@ -60,6 +60,7 @@ rem Generate shortcut filename based on host
 set SHORTCUT_NAME=%HOST_NAME%.lnk
 set SHORTCUT_PATH=%USERPROFILE%\Desktop\%SHORTCUT_NAME%
 
+rem Prompt user to create a shortcut
 echo.
 set /p CREATE_SHORTCUT="Would you like to save this as a shortcut? (y/n): "
 if /i "%CREATE_SHORTCUT%"=="y" (
@@ -69,12 +70,14 @@ if /i "%CREATE_SHORTCUT%"=="y" (
     set shortcutCreated=1
 )
 
+rem If shortcut was created, ask user to run it. Otherwise, launch the browser directly.
 if defined shortcutCreated (
     goto ask_launch
 ) else (
     goto launch_browser
 )
 
+rem Ask user to run the shortcut
 :ask_launch
 echo.
 set /p LAUNCH_SHORTCUT="Would you like to run the shortcut now? (y/n): "
@@ -83,7 +86,7 @@ if /i "%LAUNCH_SHORTCUT%" neq "y" (
     goto after_launch
 )
 
-rem Launch the browser with host resolver rules to map the domain to the specified IP
+rem Launch the browser with the host resolver rules
 :launch_browser
 start "" "%BROWSER_PATH%" --host-resolver-rules="MAP %HOST_NAME% %IP_ADDRESS%" http://%HOST_NAME%
 :after_launch
